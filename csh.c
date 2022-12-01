@@ -134,44 +134,78 @@ void simple_executer(char* command, char *args[]) {
         }
 }
 
+// NAME: looped_executer
+// INPUT: char*, int, char**
+// OUTPUT: void
+// DESCRIPTION: Executes a looped command (non built-in)
+void looped_executer (char* command, int num, char *args[]) {
+    char** args2;
+    for (int i = 1; i <= num; i++) {
+        args2 = copy_args(count_args(args), args);
+        parse_args(args2);
+        if (i+1 <= num) {
+            char it[sizeof(int)];
+            sprintf(it, "%d", i+1);
+            setenv("LOOP", it, 1);
+        }
+    }
+}
+
 // NAME: parse_args
 // INPUT: char**
 // OUTPUT: void
 // DESCRIPTION: Parses the args and determines the best executer to run
 void parse_args(char *args[]) {
-    char* commands[256];
-    char* args2[256][2]; // 2-dimensional array that maps arguments to their respective commands
-                        // args2 used for looped_executer and piped_executer
     int total_args = count_args(args); // For use with parser loop 'i < total_args'
-    int total_commands = 0; // Keeps track of the number of commands; Looped and Piped Executers will likely need
     enum {SIMPLE, LOOPED, REDIRECTED, PIPED} exec_type;
     exec_type = SIMPLE; // Default exec type initialized
     int i = 0;
-    // int j = 0; // Used for more complex parsing
-
-    // Store the first command in the commands array since args[0] is always a command
-    commands[0] = args[0];
-    total_commands++;
 
     while (i < total_args) {
+        // Check if the argument is a call to shell/env variable
+        if (i >= 1 && args[i][0] == '$') {
+                // Skip args[i][0] since it is '$' and get rest of the string
+                args[i] = getenv(args[i] + 1);
+        }
+        // Check if the argument is one of the exec types
         if (strcmp(args[i], "loop") == 0) {
+            setenv("LOOP", "1", 1);
             exec_type = LOOPED;
-            continue;
+            break;
         } else if (strcmp(args[i], ">") == 0) {
             exec_type = REDIRECTED;
-            continue;
+            break;
         } else if (strcmp(args[i], "|") == 0) {
             exec_type = PIPED;
-            continue;
+            break;
         }
         i++;
     }
 
     switch (exec_type) {
         case SIMPLE:
-            simple_executer(commands[0], args);
+            simple_executer(args[0], args);
             break;
         case LOOPED:
+            // Check if number of arguments is 3 or more
+            if (count_args(args) < 3) {
+                printf("csh: loop: too few arguments\n");
+            }
+            else {
+                // Check if second argument is a number
+                int i;
+                for (i = 0; i < strlen(args[1]); i++) {
+                    if (!isdigit(args[1][i])) {
+                        printf("csh: loop: second argument must be a number\n");
+                        break;
+                    }
+                }
+                // If second argument is a number, loop command
+                if (i == strlen(args[1])) {
+                    int num = atoi(args[1]);
+                    looped_executer(args[2], num, &args[2]);
+                }
+            }
             break;
         case REDIRECTED:
             break;
@@ -182,4 +216,30 @@ void parse_args(char *args[]) {
             break;
     }
 
+}
+
+// NAME: copy_args
+// INPUT: int, char**
+// OUTPUT: char**
+// DESCRIPTION: Copies the arguments from one array to another
+char **copy_args(int argc, char *args[]) {
+  // calculate the contiguous args buffer size
+  int length = 0;
+  size_t ptr_args = argc + 1;
+  for (int i = 0; i < argc; i++)
+  {
+    length += (strlen(args[i]) + 1);
+  }
+  char** new_args = (char**)malloc((ptr_args) * sizeof(char*) + length);
+  // copy args into the contiguous buffer
+  length = 0;
+  for (int i = 0; i < argc; i++)
+  {
+    new_args[i] = &(((char*)new_args)[(ptr_args * sizeof(char*)) + length]);
+    strcpy(new_args[i], args[i]);
+    length += (strlen(args[i]) + 1);
+  }
+  // insert NULL terminating ptr at the end of the ptr array
+  new_args[ptr_args-1] = NULL;
+  return (new_args);
 }

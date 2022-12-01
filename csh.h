@@ -20,9 +20,11 @@ void restore_signals(void);
 int count_args(char**);
 void store_args(char*, char**);
 void parse_args(char**);
+char** copy_args(int, char**);
+
 // Executer Prototypes
 void simple_executer(char*, char**);
-// looped_executer
+void looped_executer(char*, int, char**);
 // redirected_executer
 // piped_executer
 
