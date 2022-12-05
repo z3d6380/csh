@@ -5,8 +5,7 @@
     ╚██████╗███████║██║  ██║    ██╔╝  
      ╚═════╝╚══════╝╚═╝  ╚═╝    ╚═╝  
 
-ABOUT: A simple shell written in C
-       Project for OS Course at Florida Polytechnic University
+ABOUT: A simple shell written in C. Project for OS Course at Florida Polytechnic University  
 AUTHOR: Luis Moraguez
 
 ## Built-ins
@@ -84,7 +83,7 @@ AUTHOR: Luis Moraguez
  - Piping commands is currently not implemented
 
 ## Action Items
- -[ ] Add output redirection (write and append)
- -[ ] Add command piping
- -[ ] Add ability to set PATH and other environment variable using command similar to export (furture built-in)
- -[ ] Ensure that complex command combinations can be parsed/executed, eg. `loop 5 echo hello world $LOOP | grep world >> ./result.txt`
+ - [ ] Add output redirection (write and append)
+ - [ ] Add command piping
+ - [ ] Add ability to set PATH and other environment variable using command similar to export (furture built-in)
+ - [ ] Ensure that complex command combinations can be parsed/executed, eg. `loop 5 echo hello world $LOOP | grep world >> ./result.txt`
