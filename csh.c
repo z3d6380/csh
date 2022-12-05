@@ -1,18 +1,110 @@
 // File: csh.c
-// Author:
-// Date: 2022-11-22
+// Author: Luis Moraguez
+// Date: 2022-12-05
 // Version: 0.1.0
 // Description: Main driver code for csh shell loop
 
 #include "csh.h"
 
-// NAME: csh_loop
+// Clearing the shell using escape sequences
+#define clear() printf("\033[H\033[J")
+
+// NAME: init_shell
 // INPUT: void
 // OUTPUT: void
-// DESCRIPTION: Main LOOP for the csh shell
-void csh_loop(void) {
+// DESCRIPTION: Displays shell initialization message
+void init_shell(void) {
+    clear();
+    char* username = getenv("USER");
+    printf(" ██████╗███████╗██╗  ██╗" RED "    ██╗  \n" reset);
+    printf("██╔════╝██╔════╝██║  ██║" RED "    ╚██╗ \n" reset);
+    printf("██║     ███████╗███████║" RED "     ╚██╗\n" reset);
+    printf("██║     ╚════██║██╔══██║" RED "     ██╔╝\n" reset);
+    printf("╚██████╗███████║██║  ██║" RED "    ██╔╝ \n" reset);
+    printf(" ╚═════╝╚══════╝╚═╝  ╚═╝" RED "    ╚═╝  \n" reset);
+    printf("Welcome to csh, " GRN "%s!\n" reset, username);
+    printf("Type " BYEL "'help'" reset " for built-in command list\nType " BYEL "'exit'" reset " to exit the shell\n");
+    sleep(3);
+    clear();
+}
+
+// NAME: prompt1
+// INPUT: void
+// OUTPUT: char*
+// DESCRIPTION: Displays the PS1 prompt
+char* prompt1(void) {
+    char* cwd = getcwd(NULL, 0);
+    char* prompt;
+    asprintf(&prompt, RED "┌[" CYN "%d" RED "]─[" YEL "%s" RED "]─[" MAG "%s" RED "]\n└╼" GRN "%s" YEL "$ " reset, (int)getpid(), "csh", cwd, getenv("USER"));
+    free(cwd);
+    return prompt;
+}
+
+// NAME: prompt2
+// INPUT: void
+// OUTPUT: char*
+// DESCRIPTION: Displays the PS2 prompt
+char* prompt2(void) {
+    return "> ";
+}
+
+// NAME: print_help
+// INPUT: void
+// OUTPUT: void
+// DESCRIPTION: Displays the help message
+void print_help(void) {
+    printf(BWHT "Built-in commands:\n" reset);
+    printf("help\t\t\t\tDisplays this help message\n");
+    printf("about\t\t\t\tDisplays information about csh\n");
+    printf("exit\t\t\t\tExits the shell\n");
+    printf("cd\t\t\t\tChanges the current working directory\n");
+    printf("history\t\t\t\tDisplays the command history\n");
+    printf("loop # {command to execute}\tLoops a command # of times\n");
+    printf("clear\t\t\t\tClears the screen\n");
+}
+
+// NAME: print_about
+// INPUT: void
+// OUTPUT: void
+// DESCRIPTION: Displays the about message
+void print_about(void) {
+    printf(BWHT "ABOUT:" reset "\tcsh is a simple shell written in C.\n");
+    printf("\tProject for OS course at Florida Polytechnic University\n");
+    printf(BWHT "AUTHOR:" reset "\tLuis Moraguez\n");
+    printf(BWHT "VER:" reset "\t0.1.0\n");
+    printf(BWHT "DATE:" reset "\t2022-12-05\n");
+}
+
+// NAME: csh_batch_mode
+// INPUT: char*
+// OUTPUT: void
+// DESCRIPTION: Runs the shell in batch mode
+void csh_batch_mode(char* filename) {
+
+}
+
+// NAME: csh_interactive_input
+// INPUT: void
+// OUTPUT: char*
+// DESCRIPTION: Gets the user input and stores it in the buffer
+char* csh_interactive_input() {
+    char* buf;
+
+    // Get input from readline
+    buf = readline(prompt1());
+    if (buf != NULL && strlen(buf) != 0) {
+        // Add input to history
+        add_history(buf);
+    }
+    return buf;
+}
+
+// NAME: csh_interactive_loop
+// INPUT: void
+// OUTPUT: void
+// DESCRIPTION: Runs the shell in interactive mode
+void csh_interactive_loop(void) {
     // Variables
-    char *prompt = "csh> ";
     char *input;
     char *command;
     char *args[256] = {NULL};
@@ -20,7 +112,7 @@ void csh_loop(void) {
     // Main Loop
     while (1) {
         // Get Input
-        input = readline(prompt);
+        input = csh_interactive_input();
 
         // Check for EOF (Ctrl-D)
         if (input == NULL) {
@@ -68,12 +160,64 @@ void csh_loop(void) {
             }
         }
 
+        // Print help if command is help
+        // 0 arguments: print help
+        // 1+ arguments: error, print "too many arguments"
+        else if (strcmp(command, "help") == 0) {
+            store_args(command, args);
+            if (count_args(args) - 1 == 0) {
+                print_help();
+            } else {
+                printf("csh: help: too many arguments\n");
+            }
+        }
+
+        // Print about if command is about
+        // 0 arguments: print about
+        // 1+ arguments: error, print "too many arguments"
+        else if (strcmp(command, "about") == 0) {
+            store_args(command, args);
+            if (count_args(args) - 1 == 0) {
+                print_about();
+            } else {
+                printf("csh: about: too many arguments\n");
+            }
+        }
+
+        // Print history if command is history
+        // 0 arguments: print history
+        // 1+ arguments: error, print "too many arguments"
+        else if (strcmp(command, "history") == 0) {
+            store_args(command, args);
+            if (count_args(args) - 1 == 0) {
+                csh_interactive_history();   
+            } else {
+                printf("csh: history: too many arguments\n");
+            }
+        }
+
         // Run parser so that correct executer is chosen
         else {
             store_args(command, args);
             parse_args(args);
         }
 
+    }
+}
+
+// NAME: csh_interactive_history
+// INPUT: void
+// OUTPUT: void
+// DESCRIPTION: Displays the command history
+void csh_interactive_history(void) {
+    HIST_ENTRY **history;
+    int i;
+
+    history = history_list();
+    if (history) {
+        for (i = 0; history[i]; i++) {
+            printf("%d %s\n", i + history_base, history[i]->line);
+        }
     }
 }
 
@@ -150,6 +294,20 @@ void looped_executer (char* command, int num, char *args[]) {
         }
     }
 }
+
+// NAME: piped_executer
+// INPUT: char*, char**, int
+// OUTPUT: void
+// DESCRIPTION: Executes a piped command (non built-in)
+// void piped_executer(char* command, char *args[], int pIndex) {
+//     char** argsLeft;
+//     char** argsRight;
+//     argsLeft = copy_args(pIndex, args);
+//     argsRight = copy_args(count_args(&args[pIndex]), &args[pIndex]);
+
+
+
+// }
 
 // NAME: parse_args
 // INPUT: char**
