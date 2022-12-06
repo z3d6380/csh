@@ -1,0 +1,11 @@
+mkdir test
+echo -e hello world\nThis is test 1 > ./test/test1
+loop 5 echo -e hello $LOOP >> ./test/test2
+loop 3 loop 4 echo -e world $LOOP >> ./test/test3
+loop 3 mkdir $LOOP
+sleep 5
+loop 2 rmdir $LOOP
+env > ./test/env
+echo $PATH > ./test/path
+sleep 30
+rm -rf test 3

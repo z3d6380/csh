@@ -60,6 +60,8 @@ void print_help(void) {
     printf("cd\t\t\t\tChanges the current working directory\n");
     printf("history\t\t\t\tDisplays the command history\n");
     printf("loop # {command to execute}\tLoops a command # of times\n");
+    printf("path {dir_1} {dir_n}\t\tSets the path to the specified directories\n");
+    printf("export {varname} {value}\tSets the env variable to the specified value\n");
     printf("clear\t\t\t\tClears the screen\n");
 }
 
@@ -78,8 +80,43 @@ void print_about(void) {
 // NAME: csh_batch_mode
 // INPUT: char*
 // OUTPUT: void
-// DESCRIPTION: Runs the shell in batch mode
+// DESCRIPTION: Runs the shell in batch mode, reading commands from a file
 void csh_batch_mode(char* filename) {
+    // Variables
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    FILE *fp;
+    char *command;
+    char *args[256] = {NULL};
+
+    // Open file
+    fp = fopen(filename, "r");
+    if (fp == NULL) {
+        printf("csh: %s: No such file or directory\n", filename);
+        exit(1);
+    }
+
+    // Read file line by line
+    while ((read = getline(&line, &len, fp)) != -1) {
+        // Remove newline character and return character
+        line[strcspn(line, "\r\n")] = 0;
+
+        // Tokenize input to command and arguments
+        if (strcmp(line, "") == 0) {
+            continue; // If no input, continue
+        } else {
+            command = strtok(line, " ");
+        }
+
+        // Store command and arguments
+        store_args(command, args);
+        // Parse command and arguments to execute
+        parse_args(args);
+    }
+
+    // Close file
+    fclose(fp);
 
 }
 
@@ -196,6 +233,63 @@ void csh_interactive_loop(void) {
             }
         }
 
+        // Set PATH environment variable if command is path
+        // 0 arguments: Sets PATH to empty string
+        // Space separated list of directories stored in PATH env variable as concatenated with string with ':' as delimiter between directories (e.g. /bin:/usr/bin)
+        else if (strcmp(command, "path") == 0) {
+            store_args(command, args);
+            if (count_args(args) - 1 == 0) {
+                setenv("PATH", "", 1);
+            }
+            else {
+                // Set PATH to first argument
+                if (access(args[1], F_OK) == -1) {
+                    printf("csh: path: invalid directory, %s\n", args[1]);
+                    // Set PATH to empty string
+                    setenv("PATH", "", 1);
+                } else {
+                    // Set PATH to first argument
+                    setenv("PATH", args[1], 1);
+                }
+                // Concatenate the rest of the arguments
+                for (int i = 2; i < count_args(args); i++) {
+                    // Check if valid directory
+                    if (access(args[i], F_OK) == -1) {
+                        printf("csh: path: invalid directory, %s\n", args[i]);
+                        continue;
+                    }
+                    // Check if PATH is empty
+                    if (strcmp(getenv("PATH"), "") != 0) {
+                        // Add delimiter if not empty
+                        strcat(getenv("PATH"), ":");
+                    }
+                    // Add directory to PATH
+                    strcat(getenv("PATH"), args[i]);
+                }
+            }
+        }
+
+        // Set environment variable if command is export
+        // 0 arguments: error, print "too few arguments"
+        // 1 argument: error, print "too few arguments"
+        // 2 arguments: set environment variable to second argument, eg. export PATH /bin:/usr/bin
+        // 3+ arguments: error, print "too many arguments"
+        else if (strcmp(command, "export") == 0) {
+            store_args(command, args);
+            if (count_args(args) - 1 == 0) {
+                printf("csh: export: too few arguments\n");
+            }
+            else if (count_args(args) - 1 == 1) {
+                printf("csh: export: too few arguments\n");
+            }
+            else if (count_args(args) - 1 == 2) {
+                setenv(args[1], args[2], 1);
+            }
+            else {
+                printf("csh: export: too many arguments\n");
+            }
+        }
+
         // Run parser so that correct executer is chosen
         else {
             store_args(command, args);
@@ -249,6 +343,19 @@ void store_args(char* command, char *args[]) {
     }
 }
 
+// NAME: print_args
+// INPUT: char**
+// OUTPUT: void
+// DESCRIPTION: Prints the arguments in an array
+void print_args(char *args[]) {
+    int i = 0;
+    while (args[i] != NULL) {
+        printf("%s ", args[i]);
+        i++;
+    }
+    printf("\n");
+}
+
 // NAME: restore_signals
 // INPUT: void
 // OUTPUT: void
@@ -263,19 +370,22 @@ void restore_signals(void) {
 // OUTPUT: void
 // DESCRIPTION: Executes a simple command (non built-in)
 void simple_executer(char* command, char *args[]) {
-    // Create Fork
-        pid_t pid = fork();
-        // Check if child
-        if (pid == 0) {
-            // Restore Signals
-            restore_signals();
-            // Execute command
-            execvp(command, args);
-        }
-        // Wait for child process to finish
-        else {
-            wait(NULL);
-        }
+    // Check if PATH is set or not empty
+    if (getenv("PATH") != NULL && strcmp(getenv("PATH"), "") != 0) {
+        // Create Fork
+            pid_t pid = fork();
+            // Check if child
+            if (pid == 0) {
+                // Restore Signals
+                restore_signals();
+                // Execute command
+                execvp(command, args);
+            }
+            // Wait for child process to finish
+            else {
+                wait(NULL);
+            }
+    }
 }
 
 // NAME: looped_executer
@@ -295,19 +405,15 @@ void looped_executer (char* command, int num, char *args[]) {
     }
 }
 
-// NAME: piped_executer
+// NAME: redirected_executer
 // INPUT: char*, char**, int
 // OUTPUT: void
-// DESCRIPTION: Executes a piped command (non built-in)
-// void piped_executer(char* command, char *args[], int pIndex) {
-//     char** argsLeft;
-//     char** argsRight;
-//     argsLeft = copy_args(pIndex, args);
-//     argsRight = copy_args(count_args(&args[pIndex]), &args[pIndex]);
-
-
-
-// }
+// DESCRIPTION: Executes a redirected command (non built-in)
+void redirected_executer(char* command, char* args[], char* file_name, int append_bit) {
+    freopen(file_name, append_bit ? "a+" : "w+", stdout);
+    simple_executer(command, args);
+    freopen("/dev/tty", "w", stdout);
+}
 
 // NAME: parse_args
 // INPUT: char**
@@ -315,9 +421,13 @@ void looped_executer (char* command, int num, char *args[]) {
 // DESCRIPTION: Parses the args and determines the best executer to run
 void parse_args(char *args[]) {
     int total_args = count_args(args); // For use with parser loop 'i < total_args'
-    enum {SIMPLE, LOOPED, REDIRECTED, PIPED} exec_type;
+    enum {SIMPLE, LOOPED, REDIRECTED} exec_type;
     exec_type = SIMPLE; // Default exec type initialized
     int i = 0;
+    int append_bit = 0;
+    char* file_name;
+    int redirect_index = 0;
+    char** redirected_args;
 
     while (i < total_args) {
         // Check if the argument is a call to shell/env variable
@@ -332,9 +442,17 @@ void parse_args(char *args[]) {
             break;
         } else if (strcmp(args[i], ">") == 0) {
             exec_type = REDIRECTED;
+            redirect_index = i;
+            redirected_args = copy_args(redirect_index, args);
+            file_name = args[i+1];
             break;
-        } else if (strcmp(args[i], "|") == 0) {
-            exec_type = PIPED;
+        }
+        else if (strcmp(args[i], ">>") == 0) {
+            exec_type = REDIRECTED;
+            redirect_index = i;
+            redirected_args = copy_args(redirect_index, args);
+            file_name = args[i+1];
+            append_bit = 1;
             break;
         }
         i++;
@@ -366,8 +484,7 @@ void parse_args(char *args[]) {
             }
             break;
         case REDIRECTED:
-            break;
-        case PIPED:
+            redirected_executer(redirected_args[0], redirected_args, file_name, append_bit);
             break;
         default:
             printf("csh: parse: invalid command(s)");

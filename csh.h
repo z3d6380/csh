@@ -16,6 +16,8 @@
 #include <signal.h>
 #include "colors.h"
 
+#define BUFFER_MAX_LENGTH 1024
+
 // Function prototypes
 void init_shell(void);
 char* prompt1(void);
@@ -29,13 +31,13 @@ void csh_batch_mode(char*);
 void restore_signals(void);
 int count_args(char**);
 void store_args(char*, char**);
+void print_args(char**);
 void parse_args(char**);
 char** copy_args(int, char**);
 
 // Executer Prototypes
 void simple_executer(char*, char**);
 void looped_executer(char*, int, char**);
-// redirected_executer
-// void piped_executer(char*, char**, int);
+void redirected_executer(char*, char**, char*, int);
 
 #endif // CSH_H

@@ -13,8 +13,7 @@ int main(int argc, char *argv[]) {
     // Calling the shell
     // If there is an argument, run in batch mode
     if (argc == 2) {
-        printf("Batch mode not implemented yet\n");
-        // csh_batch_mode(argv[1]);
+        csh_batch_mode(argv[1]);
         return EXIT_FAILURE;
     } else {
         // Signal Handling

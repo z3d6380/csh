@@ -12,6 +12,8 @@ AUTHOR: Luis Moraguez
  - exit
  - cd
  - loop
+ - path
+ - export
  - help
  - about
  - history
@@ -60,6 +62,13 @@ AUTHOR: Luis Moraguez
  hello world 1
  hello world 2
  ```
+
+ ### path
+   - `path {directory_1} {directory_n}` Will set the $PATH environment variable using space-delimited directories
+
+ ### export
+   - `export {VARNAME} {VALUE}` Will set the named variable into the environment from the VALUE string provided
+
  ### help
    - `help` Lists the shell built-ins
 
@@ -79,11 +88,8 @@ AUTHOR: Luis Moraguez
    - Simple non-builtin commands can also be parsed and executed currently
  ### Redirection (WIP)
    - Output redirection to a file is currently not implemented
- ### Piped Commands (WIP)
-   - Piping commands is currently not implemented
 
 ## Action Items
- - [ ] Add output redirection (write and append)
- - [ ] Add command piping
- - [ ] Add ability to set PATH and other environment variable using command similar to export (furture built-in)
- - [ ] Ensure that complex command combinations can be parsed/executed, eg. `loop 5 echo hello world $LOOP | grep world >> ./result.txt`
+ - [x] Add output redirection (write and append)
+ - [x] Add ability to set PATH and other environment variable using command similar to export (furture built-in)
+ - [x] Ensure that complex command combinations can be parsed/executed, eg. `loop 5 echo world $LOOP >> ./result.txt`
