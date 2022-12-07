@@ -109,10 +109,13 @@ void csh_batch_mode(char* filename) {
             command = strtok(line, " ");
         }
 
-        // Store command and arguments
-        store_args(command, args);
-        // Parse command and arguments to execute
-        parse_args(args);
+        // Check for built-in commands
+        if (!builtin_executer(command, args)) {
+            // Store command and arguments
+            store_args(command, args);
+            // Parse command and arguments to execute
+            parse_args(args);
+        }
     }
 
     // Close file
@@ -164,7 +167,89 @@ void csh_interactive_loop(void) {
             command = strtok(input, " ");
         }
 
-        // Exit if command is exit
+        // Check for built-in commands
+        if (!builtin_executer(command, args)) {
+            // Store command and arguments
+            store_args(command, args);
+            // Parse command and arguments to execute
+            parse_args(args);
+        }
+    }
+}
+
+// NAME: csh_interactive_history
+// INPUT: void
+// OUTPUT: void
+// DESCRIPTION: Displays the command history
+void csh_interactive_history(void) {
+    HIST_ENTRY **history;
+    int i;
+
+    history = history_list();
+    if (history) {
+        for (i = 0; history[i]; i++) {
+            printf("%d %s\n", i + history_base, history[i]->line);
+        }
+    }
+}
+
+// NAME: count_args
+// INPUT: char *args[]
+// OUTPUT: int
+// DESCRIPTION: Counts the number of arguments in the array
+int count_args(char *args[]) {
+    int i = 0;
+    while (args[i] != NULL) {
+        i++;
+    }
+    return i;
+}
+
+// NAME: store_args
+// INPUT: char*, char**
+// OUTPUT: void
+// DESCRIPTION: Stores the arguments in an array
+void store_args(char* command, char *args[]) {
+    int i = 1;
+    args[0] = command;
+    while (1) {
+        args[i] = strtok(NULL, " ");
+        if (args[i] == NULL) {
+            break;
+        }
+        i++;
+    }
+}
+
+// NAME: print_args
+// INPUT: char**
+// OUTPUT: void
+// DESCRIPTION: Prints the arguments in an array
+void print_args(char *args[]) {
+    int i = 0;
+    while (args[i] != NULL) {
+        printf("%s ", args[i]);
+        i++;
+    }
+    printf("\n");
+}
+
+// NAME: restore_signals
+// INPUT: void
+// OUTPUT: void
+// DESCRIPTION: Restores the default signal handlers
+void restore_signals(void) {
+    signal(SIGINT, SIG_DFL); // Restore Ctrl-C
+    signal(SIGTSTP, SIG_DFL); // Restore Ctrl-Z
+}
+
+// NAME: builtin_executer
+// INPUT: char*
+// OUTPUT: void
+// DESCRIPTION: Executes a built-in command
+int builtin_executer(char* command, char** args) {
+
+    // Exit if command is exit
         // 0 arguments: exit(0)
         // 1+ arguments: error, print "too many arguments"
         if (strcmp(command, "exit") == 0) {
@@ -289,80 +374,10 @@ void csh_interactive_loop(void) {
                 printf("csh: export: too many arguments\n");
             }
         }
-
-        // Run parser so that correct executer is chosen
         else {
-            store_args(command, args);
-            parse_args(args);
+            return 0; // Return 0 if not built-in command
         }
-
-    }
-}
-
-// NAME: csh_interactive_history
-// INPUT: void
-// OUTPUT: void
-// DESCRIPTION: Displays the command history
-void csh_interactive_history(void) {
-    HIST_ENTRY **history;
-    int i;
-
-    history = history_list();
-    if (history) {
-        for (i = 0; history[i]; i++) {
-            printf("%d %s\n", i + history_base, history[i]->line);
-        }
-    }
-}
-
-// NAME: count_args
-// INPUT: char *args[]
-// OUTPUT: int
-// DESCRIPTION: Counts the number of arguments in the array
-int count_args(char *args[]) {
-    int i = 0;
-    while (args[i] != NULL) {
-        i++;
-    }
-    return i;
-}
-
-// NAME: store_args
-// INPUT: char*, char**
-// OUTPUT: void
-// DESCRIPTION: Stores the arguments in an array
-void store_args(char* command, char *args[]) {
-    int i = 1;
-    args[0] = command;
-    while (1) {
-        args[i] = strtok(NULL, " ");
-        if (args[i] == NULL) {
-            break;
-        }
-        i++;
-    }
-}
-
-// NAME: print_args
-// INPUT: char**
-// OUTPUT: void
-// DESCRIPTION: Prints the arguments in an array
-void print_args(char *args[]) {
-    int i = 0;
-    while (args[i] != NULL) {
-        printf("%s ", args[i]);
-        i++;
-    }
-    printf("\n");
-}
-
-// NAME: restore_signals
-// INPUT: void
-// OUTPUT: void
-// DESCRIPTION: Restores the default signal handlers
-void restore_signals(void) {
-    signal(SIGINT, SIG_DFL); // Restore Ctrl-C
-    signal(SIGTSTP, SIG_DFL); // Restore Ctrl-Z
+    return 1; // Return 1 if built-in command executed
 }
 
 // NAME: simple_executer

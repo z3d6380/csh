@@ -36,6 +36,7 @@ void parse_args(char**);
 char** copy_args(int, char**);
 
 // Executer Prototypes
+int builtin_executer(char*, char**);
 void simple_executer(char*, char**);
 void looped_executer(char*, int, char**);
 void redirected_executer(char*, char**, char*, int);
