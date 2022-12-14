@@ -8,6 +8,22 @@
 ABOUT: A simple shell written in C. Project for OS Course at Florida Polytechnic University  
 AUTHOR: Luis Moraguez
 
+## Compiling
+From within the project directory, do the folowing in the terminal:
+```shell
+mkdir ./bin
+gcc -o ./bin/csh main.c csh.c -l readline
+```
+## Running
+To run the project after compiling, do one of the following:
+```
+Interactive Mode:
+./bin/csh
+
+Batch Mode:
+./bin/csh {batch_file}
+```
+
 ## Built-ins
  - exit
  - cd
