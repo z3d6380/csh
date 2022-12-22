@@ -102,10 +102,21 @@ Batch Mode:
    - Simple non-builtin commands, such as `echo`, can be parsed an executed currently
  ### Looped Commands
    - Simple non-builtin commands can also be parsed and executed currently
- ### Redirection (WIP)
-   - Output redirection to a file is currently not implemented
+ ### Redirection
+   - Output redirection to a file currently works for both write and append
+   - Input redirection (WIP)
 
 ## Action Items
  - [x] Add output redirection (write and append)
+ - [ ] Add input redirection
  - [x] Add ability to set PATH and other environment variable using command similar to export (furture built-in)
  - [x] Ensure that complex command combinations can be parsed/executed, eg. `loop 5 echo world $LOOP >> ./result.txt`
+ - [ ] Add piping
+
+## Contributions:
+Contributions are welcome. Fork the repo, make your changes, create a diff file, and email the diff file and your GitHub username to luis@moraguez.com. If the changes are approved, you will be added as a contributor to the repo.
+
+## Donations:
+If this utility helped you with a project you're working on and you wish to make a donation, you can do so by clicking the donate button that follows. Thank you for your generosity and support!
+
+<noscript><a href="https://liberapay.com/z3d6380/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></noscript>
