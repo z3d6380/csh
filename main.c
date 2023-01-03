@@ -14,7 +14,6 @@ int main(int argc, char *argv[]) {
     // If there is an argument, run in batch mode
     if (argc == 2) {
         csh_batch_mode(argv[1]);
-        return EXIT_FAILURE;
     } else {
         // Signal Handling
         signal(SIGINT, SIG_IGN); // Ignore Ctrl-C
